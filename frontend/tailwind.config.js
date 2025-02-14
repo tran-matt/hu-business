@@ -1,9 +1,15 @@
 module.exports = {
   content: [
-    "./src/**/*.{js,jsx,ts,tsx}", 
+    "./src/**/*.{html,js,jsx,ts,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        'howard-navy': '#0A1D37', 
+        'howard-gray': '#D1D3D8', 
+        'howard-red': '#9E1B32',   
+      },
+    },
   },
   plugins: [],
 }
