@@ -1,90 +1,65 @@
-// src/pages/Login.jsx
 import React, { useState } from 'react';
+import { loginUser } from '../api';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../supabaseClient'; // Corrected import
 
 function Login() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const navigate = useNavigate(); // For navigation after login
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState(null);
+    const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+    const handleLogin = async (e) => {
+        e.preventDefault();
+        setError(null);
 
-    try {
-      // Supabase login
-      const { user, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+        const { error } = await loginUser(email, password);
+        if (error) {
+            setError(error.message);
+        } else {
+            navigate('/dashboard'); 
+        }
+    };
 
-      if (error) throw error;
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen">
+            <h2 className="text-2xl font-bold mb-4">Login</h2>
+            {error && <p className="text-red-500">{error}</p>}
+            <form onSubmit={handleLogin} className="space-y-4 w-1/3">
+                <input 
+                    type="email" 
+                    placeholder="Email" 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)} 
+                    required 
+                    className="border p-2 w-full" 
+                />
+                <input 
+                    type="password" 
+                    placeholder="Password" 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                    required 
+                    className="border p-2 w-full" 
+                />
+                <button type="submit" className="bg-blue-500 text-white p-2 rounded w-full">
+                    Login
+                </button>
+            </form>
 
-      console.log('Logged in user:', user);
-
-      // After login, navigate to dashboard
-      navigate('/dashboard');
-    } catch (error) {
-      console.error('Error during login:', error.message);
-      // Optionally, handle error (show error message to user)
-    }
-  };
-
-  const handleRegisterRedirect = () => {
-    // Navigate to the register page when "Register" is clicked
-    navigate('/register');
-  };
-
-  return (
-    <div className="container mx-auto p-4">
-      <div className="max-w-md mx-auto bg-white p-8 rounded shadow-lg">
-        <h2 className="text-2xl font-bold text-center mb-6">Login</h2>
-        
-        {/* Login Form */}
-        <form onSubmit={handleLogin}>
-          <div className="mb-4">
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
-            <input
-              id="email"
-              type="email"
-              className="mt-1 p-2 border border-gray-300 rounded w-full"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="mb-6">
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">Password</label>
-            <input
-              id="password"
-              type="password"
-              className="mt-1 p-2 border border-gray-300 rounded w-full"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          <div className="flex justify-between">
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
-            >
-              Log In
-            </button>
-            <button
-              type="button"
-              onClick={handleRegisterRedirect}
-              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-700"
-            >
-              Register
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+            {/* Registration Link */}
+            <div className="mt-4">
+                <p className="text-gray-600">
+                    Don't have an account? 
+                    <button 
+                        onClick={() => navigate('/register')} 
+                        className="text-blue-500 ml-1 hover:underline"
+                    >
+                        Sign up here.
+                    </button>
+                </p>
+            </div>
+        </div>
+    );
 }
 
 export default Login;

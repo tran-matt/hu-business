@@ -1,23 +1,59 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';  // Import BrowserRouter
-import Home from './pages/home';  // Import Home page component
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import Home from './pages/home';
 import Login from './pages/login';
 import Register from './pages/register';
 import Dashboard from './pages/dashboard';
-import { UserProvider } from './context/userContext';
+import Admin from './pages/admin';
+import { UserProvider, useUser } from './context/userContext';
+import Navbar from "./components/navbar";  // ✅ Ensure correct case
+import Footer from "./components/footer";  // ✅ Fixed import
+
+// ✅ Private Route: Ensures the user is logged in
+const PrivateRoute = ({ children }) => {
+  const { user } = useUser();
+  if (user === undefined) return null; // Prevents flickering before user state loads
+  return user ? children : <Navigate to="/login" />;
+};
+
+// ✅ Admin Route: Ensures the user is an admin
+const AdminRoute = ({ children }) => {
+  const { user } = useUser();
+  if (user === undefined) return null;
+  return user?.isAdmin ? children : <Navigate to="/dashboard" />;
+};
+
 function App() {
   return (
     <UserProvider>
-    <BrowserRouter>  {/* Wrap the Routes with BrowserRouter */}
-      <div>
+      <BrowserRouter>
+        <Navbar /> {/* ✅ Navbar appears on all pages */}
         <Routes>
-          <Route path="/" element={<Home />} />  {/* Define the route for the home page */}
-          <Route path="/login" element={<Login />} /> {/* Login page route */}
-          <Route path="/register" element={<Register />} /> {/* Register page route */}
-          <Route path="/dashboard" element={<Dashboard />} /> {/* Dashboard page route */}
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+
+          {/* ✅ Protected Routes */}
+          <Route 
+            path="/dashboard" 
+            element={
+              <PrivateRoute>
+                <Dashboard />
+              </PrivateRoute>
+            } 
+          />
+          
+          <Route 
+            path="/admin" 
+            element={
+              <AdminRoute>
+                <Admin />
+              </AdminRoute>
+            } 
+          />
         </Routes>
-      </div>
-    </BrowserRouter>
+        <Footer /> {/* ✅ Use Footer component correctly */}
+      </BrowserRouter>
     </UserProvider>
   );
 }
