@@ -1,70 +1,127 @@
-# Getting Started with Create React App
+Howard University Business Course Tracker
+🚀 A modern, user-friendly web application for Howard University Business students to track their courses, manage enrollment, and ensure prerequisite compliance.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+📌 Overview
+The Howard University Business Course Tracker is a full-stack web application designed to help students manage their academic journey effectively. This project demonstrates modern web development principles, integrating React.js, Tailwind CSS, Supabase, and more to deliver a seamless user experience.
 
-## Available Scripts
+🔹 Key Features
+✅ Secure Authentication (Sign Up, Login, Logout)
+✅ Admin Panel (Manage Courses, Add/Edit/Delete Courses)
+✅ Course Enrollment (Students can enroll/drop courses)
+✅ Prerequisite Validation (Ensures students meet prerequisites before enrolling)
+✅ Responsive Design (Fully optimized for mobile, tablet, and desktop)
+✅ Real-time Database (Using Supabase for backend storage & authentication)
+✅ User Roles & Authorization (Students vs. Admins)
+✅ Interactive UI/UX (Using React, Tailwind CSS, and React Router)
 
-In the project directory, you can run:
+🛠️ Tech Stack
+Frontend
+React.js – Component-based UI development
+React Router – Navigation and routing
+Tailwind CSS – Responsive and modern styling
+React Icons – Iconography for UI enhancements
+Backend
+Supabase – Authentication, database, and backend services
+PostgreSQL – Cloud-hosted database for course management
+RESTful API – CRUD operations for courses, students, and enrollments
+Project Management
+Git & GitHub – Version control and collaboration
+VS Code – IDE for development
+🚀 Getting Started
+🔹 Prerequisites
+Ensure you have the following installed:
 
-### `npm start`
+Node.js (v16+ recommended)
+npm or yarn
+Supabase Account (for authentication & database setup)
+🔹 Installation Steps
+1️⃣ Clone the repository
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+sh
+Copy
+Edit
+git clone https://github.com/yourusername/hu-course-tracker.git
+cd hu-course-tracker
+2️⃣ Install dependencies
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+sh
+Copy
+Edit
+npm install
+3️⃣ Set up Supabase
 
-### `npm test`
+Create a Supabase project and get your API keys
+Create tables: students, courses, semesters, student_course
+Add a column is_admin to students (boolean) for role-based access
+4️⃣ Set environment variables
+Create a .env file in the root directory and add:
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+env
+Copy
+Edit
+REACT_APP_SUPABASE_URL=your_supabase_url
+REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
+5️⃣ Run the project
 
-### `npm run build`
+sh
+Copy
+Edit
+npm start
+✅ Your project should now be running at http://localhost:3000
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+📸 Screenshots
+🔹 Dashboard
+<img src="screenshots/dashboard.png" width="700">
+🔹 Admin Panel
+<img src="screenshots/admin.png" width="700">
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
 
-### `npm run eject`
+📂 Folder Structure
+bash
+Copy
+Edit
+/frontend
+│── /public
+│── /src
+│   ├── /components
+│   │   ├── Navbar.jsx
+│   │   ├── Footer.jsx
+│   ├── /context
+│   │   ├── userContext.jsx
+│   ├── /pages
+│   │   ├── Home.jsx
+│   │   ├── Login.jsx
+│   │   ├── Register.jsx
+│   │   ├── Dashboard.jsx
+│   │   ├── Admin.jsx
+│   ├── api.js
+│   ├── App.js
+│   ├── index.js
+│── package.json
+│── README.md
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+🔹 Features Implemented
+Feature	Description
+User Authentication	Secure login, signup, and logout using Supabase Auth
+Course Management	Admins can add, update, or delete courses
+Student Enrollment	Students can enroll in and drop courses
+Prerequisite Validation	Prevents students from enrolling if prerequisites are missing
+Admin Role Handling	Only admins see the Admin Panel
+Responsive Design	Works seamlessly across mobile, tablet, and desktop
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+🌟 Future Enhancements
+📅 Student Course Schedule: Allow students to visualize their course load per semester
+📊 Progress Tracking: Show completed vs. remaining courses dynamically
+🔔 Notifications: Alert students about prerequisite issues or new course offerings
+📧 Email Reminders: Notify students about upcoming enrollments
 
-## Learn More
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+📞 Contact
+💼 Matthew Tran
+📧 tran.h.matt@gmail.com
+🌐 linkedin.com/in/matthew-d-tran/
 
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+🚀 This project showcases my skills in full-stack development, modern UI/UX, and Supabase! Looking for a Software Engineering role where I can apply my expertise in frontend and backend technologies.
