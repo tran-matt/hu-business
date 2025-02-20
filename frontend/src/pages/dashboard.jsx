@@ -119,15 +119,19 @@ function Dashboard() {
     }
   };
 
-  const handleDropCourse = async (courseId) => {
+  const handleDropCourse = async (courseId, semesterId) => {
     try {
       setLoading(true);
-      const { error } = await dropCourse(userInfo.id, courseId);
+      const { error } = await dropCourse(userInfo.id, courseId, semesterId);
       if (error) throw new Error("Failed to drop course.");
-
+  
       alert("Course dropped successfully!");
+  
+      // ✅ Removes only the course matching both `course_id` and `semester_id`
       setEnrolledCourses((prevCourses) =>
-        prevCourses.filter((course) => course.course_id !== courseId)
+        prevCourses.filter((course) =>
+          !(course.course_id === courseId && course.semester_id === semesterId)
+        )
       );
     } catch (error) {
       setErrorMessage(error.message);
@@ -135,20 +139,24 @@ function Dashboard() {
       setLoading(false);
     }
   };
-
-  const handleUpdateCourse = async (courseId, field, value) => {
-    const { error } = await updateStudentCourse(userInfo.id, courseId, { [field]: value });
-    if (error) {
-      alert("Failed to update course.");
-    } else {
+  
+  const handleUpdateCourse = async (courseId, semesterId, field, value) => {
+    try {
+      const { error } = await updateStudentCourse(userInfo.id, courseId, semesterId, { [field]: value });
+      if (error) throw new Error("Failed to update course.");
+  
       setEnrolledCourses((prevCourses) =>
         prevCourses.map((course) =>
-          course.course_id === courseId ? { ...course, [field]: value } : course
+          course.course_id === courseId && course.semester_id === semesterId
+            ? { ...course, [field]: value }
+            : course
         )
       );
+    } catch (error) {
+      alert(error.message);
     }
   };
-
+  
   const groupedCourses = enrolledCourses.reduce((acc, item) => {
     const semesterKey = `${item.semesters.year} ${item.semesters.semester_name}`;
     if (!acc[semesterKey]) acc[semesterKey] = [];
@@ -207,48 +215,49 @@ function Dashboard() {
         {/* Status, Grade, and Repeated Course Selection */}
         <div className="flex gap-4 items-center">
           {/* Status Selection */}
-          <select 
-            value={course.status || "Status"} 
-            onChange={(e) => handleUpdateCourse(course.course_id, "status", e.target.value)}
-            className="p-1 border border-gray-300 rounded"
-          >
-            <option value="Planned">Planned</option>
-            <option value="In Progress">In Progress</option>
-            <option value="Completed">Completed</option>
-          </select>
+<select 
+  value={course.status || "Planned"} 
+  onChange={(e) => handleUpdateCourse(course.course_id, course.semester_id, "status", e.target.value)}
+  className="p-1 border border-gray-300 rounded"
+>
+  <option value="Planned">Planned</option>
+  <option value="In Progress">In Progress</option>
+  <option value="Completed">Completed</option>
+</select>
 
-          {/* Grade Selection */}
-          <select 
-            value={course.grade || "Grade"} 
-            onChange={(e) => handleUpdateCourse(course.course_id, "grade", e.target.value)}
-            className="p-1 border border-gray-300 rounded"
-          >
-            <option value="Grade">N/A</option>
-            <option value="A">A</option>
-            <option value="B">B</option>
-            <option value="C">C</option>
-            <option value="D">D</option>
-            <option value="F">F</option>
-          </select>
+{/* Grade Selection */}
+<select 
+  value={course.grade || "Grade"} 
+  onChange={(e) => handleUpdateCourse(course.course_id, course.semester_id, "grade", e.target.value)}
+  className="p-1 border border-gray-300 rounded"
+>
+  <option value="Grade">N/A</option>
+  <option value="A">A</option>
+  <option value="B">B</option>
+  <option value="C">C</option>
+  <option value="D">D</option>
+  <option value="F">F</option>
+</select>
 
-          {/* Repeated Checkbox */}
-          <label className="flex items-center gap-2">
-            <input 
-              type="checkbox" 
-              checked={course.is_repeated || false} 
-              onChange={(e) => handleUpdateCourse(course.course_id, "is_repeated", e.target.checked)}
-              className="h-4 w-4"
-            />
-            Repeated?
-          </label>
+{/* Repeated Checkbox */}
+<label className="flex items-center gap-2">
+  <input 
+    type="checkbox" 
+    checked={course.is_repeated || false} 
+    onChange={(e) => handleUpdateCourse(course.course_id, course.semester_id, "is_repeated", e.target.checked)}
+    className="h-4 w-4"
+  />
+  Repeated?
+</label>
 
           {/* Drop Button */}
           <button
-            onClick={() => handleDropCourse(course.course_id)}
-            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-700 transition"
-          >
-            Drop
-          </button>
+  onClick={() => handleDropCourse(course.course_id, course.semester_id)}
+  className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-700 transition"
+>
+  Drop
+</button>
+
         </div>
       </div>
     ))}
