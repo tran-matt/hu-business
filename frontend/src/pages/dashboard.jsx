@@ -142,9 +142,9 @@ function Dashboard() {
   
   const handleUpdateCourse = async (courseId, semesterId, field, value) => {
     try {
-      const { error } = await updateStudentCourse(userInfo.id, courseId, semesterId, { [field]: value });
-      if (error) throw new Error("Failed to update course.");
+      console.log(`Updating Course: ${courseId}, Semester: ${semesterId}, Field: ${field}, Value: ${value}`);
   
+      // 🔹 Optimistically update UI
       setEnrolledCourses((prevCourses) =>
         prevCourses.map((course) =>
           course.course_id === courseId && course.semester_id === semesterId
@@ -152,18 +152,47 @@ function Dashboard() {
             : course
         )
       );
+  
+      // 🔹 Send update request to Supabase
+      const { error } = await updateStudentCourse(userInfo.id, courseId, semesterId, { [field]: value });
+  
+      if (error) {
+        console.error("Update failed:", error.message);
+        throw new Error("Failed to update course.");
+      }
+  
+      console.log("Update successful. Fetching updated courses after delay...");
+  
+      // 🔹 Delay before fetching to prevent race condition
+      await new Promise((resolve) => setTimeout(resolve, 500));
+  
+      // 🔹 Fetch latest enrolled courses **after successful update**
+      const { data: updatedEnrolledCourses, error: fetchError } = await getEnrolledCourses(userInfo.id);
+  
+      if (fetchError) {
+        console.error("Fetch failed:", fetchError.message);
+        throw new Error("Failed to fetch updated courses.");
+      }
+  
+      console.log("Updated enrolled courses:", updatedEnrolledCourses);
+  
+      // 🔹 Set latest data from Supabase
+      setEnrolledCourses(updatedEnrolledCourses || []);
     } catch (error) {
       alert(error.message);
     }
   };
   
+  // ✅ Ensure courses are correctly grouped by semester
   const groupedCourses = enrolledCourses.reduce((acc, item) => {
+    if (!item.semesters) return acc; // Prevents undefined errors
+  
     const semesterKey = `${item.semesters.year} ${item.semesters.semester_name}`;
     if (!acc[semesterKey]) acc[semesterKey] = [];
     acc[semesterKey].push(item);
     return acc;
   }, {});
-
+  
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-4xl font-bold text-center mb-6">Your Dashboard</h1>

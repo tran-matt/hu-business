@@ -87,17 +87,19 @@ export const getSemesters = async () => {
 };
 
 // **FETCH ENROLLED COURSES FOR A STUDENT**
+// **FETCH ENROLLED COURSES FOR A STUDENT**
 export const getEnrolledCourses = async (studentId) => {
     if (!studentId) return { data: null, error: "No student ID provided" };
 
     const { data, error } = await supabase
-        .from('student_course')
+        .from('student_course') // Make sure this is the correct table name in Supabase
         .select(`
             id, course_id, semester_id, status, grade, grade_points, is_repeated, credit_hours,
             courses (id, course_code, course_name, prerequisites, credit_hours),
             semesters (id, semester_name, year)
         `)
-        .eq('student_id', studentId);
+        .eq('student_id', studentId)
+        .order("semester_id", { ascending: false }); // Sort by most recent semester
 
     if (error) console.error("Error fetching enrolled courses:", error.message);
     return { data, error };
@@ -271,13 +273,21 @@ export const deleteCourse = async (id) => {
 };
 
 // **UPDATE STUDENT COURSE STATUS, GRADE, OR REPEATED STATUS**
-export const updateStudentCourse = async (studentId, courseId, updates) => {
+export const updateStudentCourse = async (studentId, courseId, semesterId, updates) => {
+    if (!studentId || !courseId || !semesterId) {
+        return { data: null, error: "Missing studentId, courseId, or semesterId" };
+    }
+
     const { data, error } = await supabase
-        .from("student_course")
+        .from("student_course") // Ensure this is the correct table name
         .update(updates)
         .eq("student_id", studentId)
-        .eq("course_id", courseId);
+        .eq("course_id", courseId)
+        .eq("semester_id", semesterId) // ✅ Ensure the correct semester is updated
+        .select()
+        .single(); // Ensures only one record is updated
 
     if (error) console.error("Error updating student course:", error.message);
     return { data, error };
 };
+
