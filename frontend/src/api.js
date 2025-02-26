@@ -55,7 +55,6 @@ export const logoutUser = async () => {
     }
 };
 
-// **GET CURRENT USER SESSION**
 // **GET CURRENT USER SESSION & STUDENT INFO**
 export const getUserSession = async () => {
     try {
@@ -117,35 +116,38 @@ export const getSemesters = async () => {
 };
 
 // **FETCH ENROLLED COURSES FOR A STUDENT**
-// **FETCH ENROLLED COURSES FOR A STUDENT**
 export const getEnrolledCourses = async (studentId) => {
-    if (!studentId) return { data: null, error: "No student ID provided" };
+    if (!studentId) {
+        console.error("❌ No student ID provided");
+        return { data: null, error: "No student ID provided" };
+    }
+
+    console.log(`📌 Fetching enrolled courses for Student ID: ${studentId}`);
 
     const { data, error } = await supabase
-        .from('student_course') // Make sure this is the correct table name in Supabase
+        .from("student_course")
         .select(`
-            id, course_id, semester_id, status, grade, grade_points, is_repeated, credit_hours,
-            courses (id, course_code, course_name, prerequisites, credit_hours),
-            semesters (id, semester_name, year)
+            id, 
+            student_id,
+            course_id, 
+            semester_id, 
+            status, 
+            grade, 
+            grade_points, 
+            is_repeated, 
+            credit_hours,
+            courses!inner (id, course_code, course_name, credit_hours),
+            semesters!inner (id, semester_name, year)
         `)
-        .eq('student_id', studentId)
-        .order("semester_id", { ascending: false }); // Sort by most recent semester
+        .eq("student_id", studentId)
+        .order("semester_id", { ascending: false });
 
-    if (error) console.error("Error fetching enrolled courses:", error.message);
-    return { data, error };
-};
+    if (error) {
+        console.error("❌ Error fetching enrolled courses:", error.message);
+        return { data: null, error };
+    }
 
-// **FETCH COMPLETED COURSES FOR A STUDENT**
-export const getCompletedCourses = async (studentId) => {
-    if (!studentId) return { data: null, error: "No student ID provided" };
-
-    const { data, error } = await supabase
-        .from('student_course')
-        .select('course_id')
-        .eq('student_id', studentId)
-        .eq('status', 'Completed');
-
-    if (error) console.error("Error fetching completed courses:", error.message);
+    console.log("✅ Retrieved Enrolled Courses:", data);
     return { data, error };
 };
 
@@ -197,29 +199,6 @@ export const enrollInCourse = async (studentId, courseId, semesterId) => {
 
     console.log("📘 Course Data Retrieved:", courseData);
 
-    // **Special Case: GMGT 590 requires 27 completed core credits**
-    if (courseData.course_code === "GMGT 590") {
-        const { data: completedCreditsData, error: completedCreditsError } = await supabase
-            .from("student_course")
-            .select("credit_hours")
-            .eq("student_id", studentId)
-            .eq("status", "Completed"); // Only count completed courses
-
-        if (completedCreditsError || !completedCreditsData) {
-            console.error("❌ Error fetching completed credits:", completedCreditsError?.message);
-            return { error: { message: "Failed to fetch completed courses." } };
-        }
-
-        // Sum up total completed credits
-        const totalCompletedCredits = completedCreditsData.reduce((sum, course) => sum + (course.credit_hours || 0), 0);
-
-        console.log(`📊 Total Completed Credits: ${totalCompletedCredits}`);
-
-        if (totalCompletedCredits < 27) {
-            return { error: { message: "You must complete at least 27 core credits before enrolling in GMGT 590." } };
-        }
-    }
-
     // Fetch student's completed courses
     const { data: completedData, error: completedError } = await getCompletedCourses(studentId);
     
@@ -232,7 +211,7 @@ export const enrollInCourse = async (studentId, courseId, semesterId) => {
 
     console.log("📌 Completed Courses:", completedCourseIds);
 
-    // Ensure prerequisites is always an array
+    // Ensure prerequisites are met
     const prerequisites = Array.isArray(courseData.prerequisites) ? courseData.prerequisites : [];
 
     if (prerequisites.length > 0) {
@@ -254,8 +233,10 @@ export const enrollInCourse = async (studentId, courseId, semesterId) => {
             status: "Planned", 
             credit_hours: courseData.credit_hours || 0, // ✅ Ensure credit hours are included
             grade: null,
-            grade_points: 0 // ✅ Default grade points to 0
-        }]);
+            grade_points: 0, // ✅ Default grade points to 0
+            is_repeated: false // ✅ Default value
+        }])
+        .select();
 
     if (error) {
         console.error("❌ Error enrolling in course:", error.message);
@@ -265,6 +246,7 @@ export const enrollInCourse = async (studentId, courseId, semesterId) => {
     console.log(`✅ Successfully enrolled in course:`, data);
     return { data, error: null };
 };
+
 
 // **DROP A COURSE**
 export const dropCourse = async (studentId, courseId, semesterId) => {
@@ -313,14 +295,21 @@ export const addCourse = async (course) => {
 };
 
 // Update an existing course
-export const updateCourse = async (id, updatedCourse) => {
+export const updateCourse = async (studentId, courseId, semesterId, newGrade, newGradePoints) => {
     const { data, error } = await supabase
-        .from("courses")
-        .update(updatedCourse)
-        .eq("id", id);
+        .from("student_course")
+        .update({ grade: newGrade, grade_points: newGradePoints })
+        .eq("student_id", studentId)
+        .eq("course_id", courseId)
+        .eq("semester_id", semesterId)
+        .select("*"); // Ensures updated data is returned immediately
 
-    if (error) console.error("Error updating course:", error.message);
-    return { data, error };
+    if (error) {
+        console.error("Error updating course:", error);
+    } else {
+        console.log("Update successful:", data);
+        return data; // Optionally return updated data
+    }
 };
 
 // Delete a course
@@ -335,21 +324,43 @@ export const deleteCourse = async (id) => {
 };
 
 // **UPDATE STUDENT COURSE STATUS, GRADE, OR REPEATED STATUS**
-export const updateStudentCourse = async (studentId, courseId, semesterId, updates) => {
-    if (!studentId || !courseId || !semesterId) {
-        return { data: null, error: "Missing studentId, courseId, or semesterId" };
-    }
-
+export const updateStudentCourse = async (studentId, courseId, semesterId, updatedFields) => {
     const { data, error } = await supabase
-        .from("student_course") // Ensure this is the correct table name
-        .update(updates)
+        .from("student_course")
+        .update(updatedFields)
         .eq("student_id", studentId)
         .eq("course_id", courseId)
-        .eq("semester_id", semesterId) // ✅ Ensure the correct semester is updated
-        .select()
-        .single(); // Ensures only one record is updated
+        .eq("semester_id", semesterId)
+        .select(); // ✅ Ensures updated data is returned
 
-    if (error) console.error("Error updating student course:", error.message);
+    if (error) {
+        console.error("❌ Supabase Update Error:", error);
+    } else {
+        console.log("✅ Supabase Update Successful:", data);
+    }
+
     return { data, error };
 };
 
+
+
+export const getCompletedCourses = async (studentId) => {
+    if (!studentId) {
+        console.error("❌ No student ID provided");
+        return { data: null, error: "No student ID provided" };
+    }
+
+    const { data, error } = await supabase
+        .from('student_course')
+        .select('course_id, credit_hours, grade_points, status')
+        .eq('student_id', studentId)
+        .eq('status', 'Completed');
+
+    if (error) {
+        console.error("❌ Error fetching completed courses:", error.message);
+        return { data: null, error };
+    }
+
+    console.log("✅ Completed Courses:", data);
+    return { data, error };
+};

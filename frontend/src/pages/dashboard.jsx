@@ -43,7 +43,9 @@ const [isEditingHuId, setIsEditingHuId] = useState(false);
           }
   
           setUserInfo(user);
-          setHuId(user.hu_id); // ✅ Store HU ID in state
+          setHuId(user.hu_id);
+  
+          console.log("Fetching data for Student ID:", user.id); // ✅ Debugging
   
           const [enrolledRes, coursesRes, semestersRes, completedRes] =
               await Promise.all([
@@ -58,26 +60,13 @@ const [isEditingHuId, setIsEditingHuId] = useState(false);
           if (semestersRes.error) throw new Error("Failed to fetch semesters.");
           if (completedRes.error) throw new Error("Failed to fetch completed courses.");
   
-          setEnrolledCourses(enrolledRes.data || []);
-          setAvailableCourses(coursesRes.data || []);
-          setSemesters(semestersRes.data || []);
+          console.log("✅ Enrolled Courses Response:", enrolledRes.data);
+  
+          setEnrolledCourses([...enrolledRes.data]); // ✅ Spread array to force state update
+          setAvailableCourses([...coursesRes.data]);
+          setSemesters([...semestersRes.data]);
           setCompletedCourses(completedRes.data.map((c) => c.course_id));
   
-          // 🔹 Calculate Total Completed Credits & GPA
-          let totalCredits = 0;
-          let totalGradePoints = 0;
-  
-          completedRes.data.forEach((course) => {
-              if (course.status === "Completed") {
-                  totalCredits += course.credit_hours || 0;
-                  totalGradePoints += (course.grade_points || 0) * (course.credit_hours || 0);
-              }
-          });
-  
-          const calculatedGpa = totalCredits > 0 ? (totalGradePoints / totalCredits).toFixed(2) : 0;
-  
-          setTotalCredits(totalCredits);
-          setGpa(calculatedGpa);
       } catch (error) {
           setErrorMessage(error.message);
       } finally {
@@ -85,7 +74,6 @@ const [isEditingHuId, setIsEditingHuId] = useState(false);
       }
   };
   
-
     fetchUserData();
 }, [navigate]);
 
@@ -180,43 +168,34 @@ const [isEditingHuId, setIsEditingHuId] = useState(false);
   
   const handleUpdateCourse = async (courseId, semesterId, field, value) => {
     try {
-        console.log(`Updating Course: ${courseId}, Semester: ${semesterId}, Field: ${field}, Value: ${value}`);
+        console.log(`🔄 Updating Course: ${courseId}, Semester: ${semesterId}, Field: ${field}, Value: ${value}`);
 
-        // 🔹 Optimistically update UI
-        setEnrolledCourses((prevCourses) =>
-            prevCourses.map((course) =>
-                course.course_id === courseId && course.semester_id === semesterId
-                    ? { ...course, [field]: value }
-                    : course
-            )
-        );
+        let updatedFields = { [field]: value };
 
-        // 🔹 Send update request to Supabase
-        const { error } = await updateStudentCourse(userInfo.id, courseId, semesterId, { [field]: value });
+        // 🔹 If updating the grade, update grade_points and mark as completed
+        if (field === "grade") {
+            const gradeMapping = { A: 4, B: 3, C: 2, D: 1, F: 0 };
+            updatedFields.grade_points = gradeMapping[value] || 0;
+            updatedFields.status = "Completed"; // Ensure course is marked as completed
+        }
+
+        // 🔹 Wait for Supabase update before updating UI
+        const { error } = await updateStudentCourse(userInfo.id, courseId, semesterId, updatedFields);
 
         if (error) {
-            console.error("Update failed:", error.message);
-            throw new Error("Failed to update course.");
+            console.error("❌ Update failed:", error.message);
+            alert("Failed to update course.");
+            return;
         }
 
-        console.log("Update successful. Fetching updated courses...");
+        console.log("✅ Update successful in Supabase!");
 
-        // 🔹 Fetch latest enrolled courses **after successful update**
-        const updatedEnrolledCourses = await getEnrolledCourses(userInfo.id);
-if (updatedEnrolledCourses.error) {
-    console.error("Failed to fetch updated enrolled courses:", updatedEnrolledCourses.error.message);
-} else {
-    setEnrolledCourses(updatedEnrolledCourses.data || []);
-}
+        // 🔹 Fetch updated enrolled courses
+        const { data: updatedEnrolledCourses } = await getEnrolledCourses(userInfo.id);
+        setEnrolledCourses(updatedEnrolledCourses || []);
 
-
-        // 🔹 Fetch latest completed courses
-        const { data: updatedCompletedCourses, error: completedError } = await getCompletedCourses(userInfo.id);
-        if (completedError) {
-            console.error("Fetch failed:", completedError.message);
-            throw new Error("Failed to fetch updated completed courses.");
-        }
-
+        // 🔹 Fetch updated completed courses and recalculate GPA
+        const { data: updatedCompletedCourses } = await getCompletedCourses(userInfo.id);
         let newTotalCredits = 0;
         let newTotalGradePoints = 0;
 
@@ -230,6 +209,8 @@ if (updatedEnrolledCourses.error) {
         const newCalculatedGpa = newTotalCredits > 0 ? (newTotalGradePoints / newTotalCredits).toFixed(2) : 0;
         setTotalCredits(newTotalCredits);
         setGpa(newCalculatedGpa);
+
+        console.log(`📌 New GPA: ${newCalculatedGpa}, Total Credits: ${newTotalCredits}`);
 
     } catch (error) {
         alert(error.message);
@@ -365,12 +346,17 @@ if (updatedEnrolledCourses.error) {
 </select>
 
 {/* Grade Selection */}
-<select 
-  value={course.grade || "Grade"} 
-  onChange={(e) => handleUpdateCourse(course.course_id, course.semester_id, "grade", e.target.value)}
+<select
+  value={course.grade || ""}
+  onChange={async (e) => {
+    const newGrade = e.target.value;
+    console.log(`🎯 Grade selected: ${newGrade} for ${course.course_id}`);
+
+    await handleUpdateCourse(course.course_id, course.semester_id, "grade", newGrade);
+  }}
   className="p-1 border border-gray-300 rounded"
 >
-  <option value="Grade">N/A</option>
+  <option value="">N/A</option>
   <option value="A">A</option>
   <option value="B">B</option>
   <option value="C">C</option>
