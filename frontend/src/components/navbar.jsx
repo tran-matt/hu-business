@@ -36,7 +36,6 @@ const Navbar = () => {
           {!user ? (
             <>
               <Link to="/login" className="block sm:inline-block px-4 py-2 hover:bg-gray-700 sm:hover:bg-transparent rounded">Login</Link>
-              <Link to="/register" className="block sm:inline-block px-4 py-2 hover:bg-gray-700 sm:hover:bg-transparent rounded">Register</Link>
             </>
           ) : (
             <button
