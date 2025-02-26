@@ -6,17 +6,17 @@ import Register from './pages/register';
 import Dashboard from './pages/dashboard';
 import Admin from './pages/admin';
 import { UserProvider, useUser } from './context/userContext';
-import Navbar from "./components/navbar";  // ✅ Ensure correct case
-import Footer from "./components/footer";  // ✅ Fixed import
+import Navbar from "./components/navbar"; 
+import Footer from "./components/footer";  
 
-// ✅ Private Route: Ensures the user is logged in
+// Private Route: Ensures the user is logged in
 const PrivateRoute = ({ children }) => {
   const { user } = useUser();
   if (user === undefined) return null; // Prevents flickering before user state loads
   return user ? children : <Navigate to="/login" />;
 };
 
-// ✅ Admin Route: Ensures the user is an admin
+// Admin Route: Ensures the user is an admin
 const AdminRoute = ({ children }) => {
   const { user } = useUser();
   if (user === undefined) return null;
@@ -27,13 +27,13 @@ function App() {
   return (
     <UserProvider>
       <BrowserRouter>
-        <Navbar /> {/* ✅ Navbar appears on all pages */}
+        <Navbar /> 
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
-          {/* ✅ Protected Routes */}
+          {/* Protected Routes */}
           <Route 
             path="/dashboard" 
             element={
@@ -52,7 +52,7 @@ function App() {
             } 
           />
         </Routes>
-        <Footer /> {/* ✅ Use Footer component correctly */}
+        <Footer /> 
       </BrowserRouter>
     </UserProvider>
   );
