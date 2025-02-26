@@ -30,23 +30,23 @@ function Dashboard() {
 const [isEditingHuId, setIsEditingHuId] = useState(false);
 
 
-  useEffect(() => {
-    const fetchUserData = async () => {
+useEffect(() => {
+  const fetchUserData = async () => {
       setLoading(true);
       setErrorMessage(null);
-  
+
       try {
           const user = await getUserSession();
           if (!user) {
               navigate("/login");
               return;
           }
-  
+
           setUserInfo(user);
           setHuId(user.hu_id);
-  
-          console.log("Fetching data for Student ID:", user.id); // ✅ Debugging
-  
+
+          console.log("Fetching data for Student ID:", user.id);
+
           const [enrolledRes, coursesRes, semestersRes, completedRes] =
               await Promise.all([
                   getEnrolledCourses(user.id),
@@ -54,27 +54,44 @@ const [isEditingHuId, setIsEditingHuId] = useState(false);
                   getSemesters(),
                   getCompletedCourses(user.id),
               ]);
-  
+
           if (enrolledRes.error) throw new Error("Failed to fetch enrolled courses.");
           if (coursesRes.error) throw new Error("Failed to fetch available courses.");
           if (semestersRes.error) throw new Error("Failed to fetch semesters.");
           if (completedRes.error) throw new Error("Failed to fetch completed courses.");
-  
+
           console.log("✅ Enrolled Courses Response:", enrolledRes.data);
-  
-          setEnrolledCourses([...enrolledRes.data]); // ✅ Spread array to force state update
+
+          setEnrolledCourses([...enrolledRes.data]);
           setAvailableCourses([...coursesRes.data]);
           setSemesters([...semestersRes.data]);
           setCompletedCourses(completedRes.data.map((c) => c.course_id));
-  
+
+          // 🔹 IMMEDIATELY Calculate GPA & Credits
+          let newTotalCredits = 0;
+          let newTotalGradePoints = 0;
+
+          completedRes.data.forEach((course) => {
+              if (course.status === "Completed") {
+                  newTotalCredits += course.credit_hours || 0;
+                  newTotalGradePoints += (course.grade_points || 0) * (course.credit_hours || 0);
+              }
+          });
+
+          const newCalculatedGpa = newTotalCredits > 0 ? (newTotalGradePoints / newTotalCredits).toFixed(2) : 0;
+          setTotalCredits(newTotalCredits);
+          setGpa(newCalculatedGpa);
+
+          console.log(`📌 Initialized GPA: ${newCalculatedGpa}, Total Credits: ${newTotalCredits}`);
+
       } catch (error) {
           setErrorMessage(error.message);
       } finally {
           setLoading(false);
       }
   };
-  
-    fetchUserData();
+
+  fetchUserData();
 }, [navigate]);
 
   const isEligibleForCourse = (course) => {
