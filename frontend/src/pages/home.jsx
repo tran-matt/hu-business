@@ -6,7 +6,7 @@ function Home() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gray-50">
-      {/* ✅ Header Section */}
+      {/* Header Section */}
       <header className="bg-blue-900 text-white py-20 text-center">
         <div className="max-w-4xl mx-auto px-4">
           <h1 className="text-4xl md:text-5xl font-bold leading-tight">
@@ -19,7 +19,7 @@ function Home() {
         </div>
       </header>
 
-      {/* ✅ Features Section */}
+      {/* Features Section */}
       <section className="container mx-auto py-16 px-6 text-center">
         <h2 className="text-3xl font-semibold text-gray-800 mb-10">
           Why Use This Platform?
@@ -46,7 +46,7 @@ function Home() {
         </div>
       </section>
 
-      {/* ✅ Call-to-Action Section */}
+      {/* Call-to-Action Section */}
       <section className="text-center py-16 bg-blue-100">
         <div className="max-w-3xl mx-auto px-6">
           <h2 className="text-3xl font-semibold text-gray-800">

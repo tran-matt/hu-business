@@ -118,11 +118,11 @@ export const getSemesters = async () => {
 // **FETCH ENROLLED COURSES FOR A STUDENT**
 export const getEnrolledCourses = async (studentId) => {
     if (!studentId) {
-        console.error("❌ No student ID provided");
+        console.error("No student ID provided");
         return { data: null, error: "No student ID provided" };
     }
 
-    console.log(`📌 Fetching enrolled courses for Student ID: ${studentId}`);
+    console.log(`Fetching enrolled courses for Student ID: ${studentId}`);
 
     const { data, error } = await supabase
         .from("student_course")
@@ -143,11 +143,11 @@ export const getEnrolledCourses = async (studentId) => {
         .order("semester_id", { ascending: false });
 
     if (error) {
-        console.error("❌ Error fetching enrolled courses:", error.message);
+        console.error("Error fetching enrolled courses:", error.message);
         return { data: null, error };
     }
 
-    console.log("✅ Retrieved Enrolled Courses:", data);
+    console.log("Retrieved Enrolled Courses:", data);
     return { data, error };
 };
 
@@ -183,7 +183,7 @@ export const enrollInCourse = async (studentId, courseId, semesterId) => {
         return { error: { message: "Missing parameters" } };
     }
 
-    console.log(`🛠 Attempting to enroll Student:`, { studentId, courseId, semesterId });
+    console.log(`Attempting to enroll Student:`, { studentId, courseId, semesterId });
 
     // Fetch course details
     const { data: courseData, error: courseError } = await supabase
@@ -193,7 +193,7 @@ export const enrollInCourse = async (studentId, courseId, semesterId) => {
         .single();
 
     if (courseError || !courseData) {
-        console.error("❌ Error fetching course details:", courseError?.message);
+        console.error("Error fetching course details:", courseError?.message);
         return { error: { message: "Failed to fetch course details." } };
     }
 
@@ -231,35 +231,69 @@ export const enrollInCourse = async (studentId, courseId, semesterId) => {
             course_id: courseId, 
             semester_id: semesterId, 
             status: "Planned", 
-            credit_hours: courseData.credit_hours || 0, // ✅ Ensure credit hours are included
+            credit_hours: courseData.credit_hours || 0, // Ensure credit hours are included
             grade: null,
-            grade_points: 0, // ✅ Default grade points to 0
-            is_repeated: false // ✅ Default value
+            grade_points: 0, // Default grade points to 0
+            is_repeated: false // Default value
         }])
         .select();
 
     if (error) {
-        console.error("❌ Error enrolling in course:", error.message);
+        console.error("Error enrolling in course:", error.message);
         return { error };
     }
 
-    console.log(`✅ Successfully enrolled in course:`, data);
+    console.log(`Successfully enrolled in course:`, data);
     return { data, error: null };
 };
 
 
 // **DROP A COURSE**
 export const dropCourse = async (studentId, courseId, semesterId) => {
-    const { error } = await supabase
-        .from('student_course')
-        .delete()
-        .eq('student_id', studentId)
-        .eq('course_id', courseId)
-        .eq('semester_id', semesterId);
+    try {
+        console.log(`🗑️ Attempting to delete course:`, { studentId, courseId, semesterId });
 
-    if (error) console.error("Error dropping course:", error.message);
-    return { error };
+        // Step 1: Fetch the row's primary key (id)
+        const { data: existingCourse, error: fetchError } = await supabase
+            .from('student_course')
+            .select('id')
+            .eq('student_id', studentId)
+            .eq('course_id', courseId)
+            .eq('semester_id', semesterId)
+            .single();
+
+        if (fetchError) {
+            console.error("❌ Error fetching course before deletion:", fetchError.message);
+            return { error: fetchError };
+        }
+
+        if (!existingCourse) {
+            console.warn("⚠️ No matching course found in database.");
+            return { error: { message: "Course not found. Unable to drop." } };
+        }
+
+        console.log(`🚀 Found course ID, proceeding with deletion:`, existingCourse.id);
+
+        // Step 2: Delete by `id`
+        const { error } = await supabase
+            .from('student_course')
+            .delete()
+            .eq('id', existingCourse.id);
+
+        if (error) {
+            console.error("❌ Error dropping course:", error.message);
+            return { error };
+        }
+
+        console.log("✅ Successfully dropped course.");
+        return { error: null };
+
+    } catch (err) {
+        console.error("❌ Unexpected error in dropCourse:", err.message);
+        return { error: { message: "Unexpected error occurred while dropping the course." } };
+    }
 };
+
 
 // **UPDATE COURSE GRADE**
 export const updateGrade = async (studentId, courseId, grade) => {
@@ -334,9 +368,9 @@ export const updateStudentCourse = async (studentId, courseId, semesterId, updat
         .select(); // ✅ Ensures updated data is returned
 
     if (error) {
-        console.error("❌ Supabase Update Error:", error);
+        console.error("Supabase Update Error:", error);
     } else {
-        console.log("✅ Supabase Update Successful:", data);
+        console.log("Supabase Update Successful:", data);
     }
 
     return { data, error };
@@ -346,7 +380,7 @@ export const updateStudentCourse = async (studentId, courseId, semesterId, updat
 
 export const getCompletedCourses = async (studentId) => {
     if (!studentId) {
-        console.error("❌ No student ID provided");
+        console.error("No student ID provided");
         return { data: null, error: "No student ID provided" };
     }
 
@@ -357,10 +391,10 @@ export const getCompletedCourses = async (studentId) => {
         .eq('status', 'Completed');
 
     if (error) {
-        console.error("❌ Error fetching completed courses:", error.message);
+        console.error("Error fetching completed courses:", error.message);
         return { data: null, error };
     }
 
-    console.log("✅ Completed Courses:", data);
+    console.log("Completed Courses:", data);
     return { data, error };
 };

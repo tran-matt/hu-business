@@ -130,7 +130,7 @@ useEffect(() => {
       return;
     }
   
-    // ✅ Ensure prerequisites is always an array
+    //Ensure prerequisites is always an array
     if (!courseToEnroll.prerequisites || !Array.isArray(courseToEnroll.prerequisites)) {
       courseToEnroll.prerequisites = [];
   }
@@ -164,39 +164,54 @@ useEffect(() => {
   
   const handleDropCourse = async (courseId, semesterId) => {
     try {
-      setLoading(true);
-      const { error } = await dropCourse(userInfo.id, courseId, semesterId);
-      if (error) throw new Error("Failed to drop course.");
-  
-      alert("Course dropped successfully!");
-  
-      // ✅ Removes only the course matching both `course_id` and `semester_id`
-      setEnrolledCourses((prevCourses) =>
-        prevCourses.filter((course) =>
-          !(course.course_id === courseId && course.semester_id === semesterId)
-        )
-      );
+        setLoading(true);
+        setErrorMessage(null);
+        
+        console.log(`🗑️ Attempting to drop Course ID: ${courseId}, Semester ID: ${semesterId} for Student ID: ${userInfo.id}`);
+
+        // Call API to drop the course
+        const { error } = await dropCourse(userInfo.id, courseId, semesterId);
+
+        if (error) {
+            console.error("❌ Error dropping course:", error.message);
+            throw new Error(error.message || "Failed to drop course.");
+        }
+
+        alert("✅ Course dropped successfully!");
+
+        // Fetch updated enrolled courses from Supabase
+        const { data: updatedEnrolledCourses, error: fetchError } = await getEnrolledCourses(userInfo.id);
+
+        if (fetchError) {
+            console.error("❌ Error fetching updated enrolled courses:", fetchError.message);
+            setErrorMessage("Failed to refresh enrolled courses.");
+        } else {
+            console.log("📌 Updated Enrolled Courses:", updatedEnrolledCourses);
+            setEnrolledCourses(updatedEnrolledCourses || []); // ✅ Update state with new data
+        }
+
     } catch (error) {
-      setErrorMessage(error.message);
+        console.error("❌ Unexpected Error in handleDropCourse:", error.message);
+        setErrorMessage(error.message);
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
-  };
-  
+};
+
   const handleUpdateCourse = async (courseId, semesterId, field, value) => {
     try {
         console.log(`🔄 Updating Course: ${courseId}, Semester: ${semesterId}, Field: ${field}, Value: ${value}`);
 
         let updatedFields = { [field]: value };
 
-        // 🔹 If updating the grade, update grade_points and mark as completed
+        // If updating the grade, update grade_points and mark as completed
         if (field === "grade") {
             const gradeMapping = { A: 4, B: 3, C: 2, D: 1, F: 0 };
             updatedFields.grade_points = gradeMapping[value] || 0;
             updatedFields.status = "Completed"; // Ensure course is marked as completed
         }
 
-        // 🔹 Wait for Supabase update before updating UI
+        // Wait for Supabase update before updating UI
         const { error } = await updateStudentCourse(userInfo.id, courseId, semesterId, updatedFields);
 
         if (error) {
@@ -205,7 +220,7 @@ useEffect(() => {
             return;
         }
 
-        console.log("✅ Update successful in Supabase!");
+        console.log("Update successful in Supabase!");
 
         // 🔹 Fetch updated enrolled courses
         const { data: updatedEnrolledCourses } = await getEnrolledCourses(userInfo.id);
@@ -227,7 +242,7 @@ useEffect(() => {
         setTotalCredits(newTotalCredits);
         setGpa(newCalculatedGpa);
 
-        console.log(`📌 New GPA: ${newCalculatedGpa}, Total Credits: ${newTotalCredits}`);
+        console.log(`New GPA: ${newCalculatedGpa}, Total Credits: ${newTotalCredits}`);
 
     } catch (error) {
         alert(error.message);
@@ -277,14 +292,14 @@ useEffect(() => {
       <h1 className="text-4xl font-bold text-center mb-6">Your Dashboard</h1>
 
       {errorMessage && <p className="text-center text-red-500">{errorMessage}</p>}
-      {/* ✅ Display Student Info */}
+      {/* Display Student Info */}
       {loading && <p className="text-center text-gray-500">Loading...</p>}
     {userInfo && (
         <div className="bg-gray-100 p-4 rounded-lg shadow-md mb-6 text-left">
         <p className="text-lg font-semibold">Student Name: <span className="text-blue-600">{userInfo.first_name} {userInfo.last_name}</span></p>
         <p className="text-lg font-semibold">Email: <span className="text-blue-600">{userInfo.email}</span></p>
     
-        {/* ✅ Editable HU ID Section */}
+        {/* Editable HU ID Section */}
         <p className="text-lg font-semibold">HU ID No: 
             {isEditingHuId ? (
                 <input 

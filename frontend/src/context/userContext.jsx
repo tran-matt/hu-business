@@ -4,7 +4,7 @@ import { getUserSession, logoutUser, supabase } from '../api';
 const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
-    const [user, setUser] = useState(undefined); // Prevent flickering on initial load
+    const [user, setUser] = useState(undefined); 
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -18,7 +18,7 @@ export const UserProvider = ({ children }) => {
                         .from('students')
                         .select('id, is_admin')
                         .eq('id', sessionUser.id)
-                        .single(); // Ensures exactly one row is returned
+                        .single();
 
                     if (error) {
                         console.error("Error fetching user details:", error.message);
@@ -36,7 +36,7 @@ export const UserProvider = ({ children }) => {
 
         fetchSession();
 
-        // ✅ Corrected Auth State Listener (fixes unsubscribe error)
+        //Auth State Listener
         const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
             if (session?.user) {
                 setUser(session.user);
